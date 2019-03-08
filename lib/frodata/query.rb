@@ -37,8 +37,7 @@ module FrOData
       key_property.value = key
 
       pathname = "#{entity_set.name}(#{key_property.url_value})"
-      query = [pathname, assemble_criteria].compact.join('?')
-      execute(query).first
+      [pathname, assemble_criteria].compact.join('?')
     end
 
     # Adds a filter criteria to the query.

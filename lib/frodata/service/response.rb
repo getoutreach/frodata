@@ -1,8 +1,4 @@
-require 'frodata/service/response/atom'
 require 'frodata/service/response/json'
-require 'frodata/service/response/plain'
-require 'frodata/service/response/xml'
-require 'frodata/service/response/unknown_type'
 
 module FrOData
   class Service
@@ -28,15 +24,15 @@ module FrOData
         execute(&block)
       end
 
-      # Returns the HTTP status code.
-      def status
-        response.status
-      end
+      # # Returns the HTTP status code.
+      # def status
+      #   response.status
+      # end
 
-      # Whether the request was successful.
-      def success?
-        200 <= status && status < 300
-      end
+      # # Whether the request was successful.
+      # def success?
+      #   200 <= status && status < 300
+      # end
 
       # Returns the content type of the resonse.
       def content_type
