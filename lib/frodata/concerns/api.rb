@@ -15,20 +15,20 @@ module FrOData
       # Examples
       #
       #   # Perform a get request
-      #   client.get '/services/data/v24.0/sobjects'
-      #   client.api_get 'sobjects'
+      #   client.get '/api/data/v9.1/leads'
+      #   client.api_get 'leads'
       #
       #   # Perform a post request
-      #   client.post '/services/data/v24.0/sobjects/Account', { ... }
-      #   client.api_post 'sobjects/Account', { ... }
+      #   client.post '/api/data/v9.1/leads', { ... }
+      #   client.api_post 'leads', { ... }
       #
       #   # Perform a put request
-      #   client.put '/services/data/v24.0/sobjects/Account/001D000000INjVe', { ... }
-      #   client.api_put 'sobjects/Account/001D000000INjVe', { ... }
+      #   client.put '/api/data/v9.1/leads(073ca9c8-2a41-e911-a81d-000d3a1d5a0b)', { ... }
+      #   client.api_put 'leads(073ca9c8-2a41-e911-a81d-000d3a1d5a0b)', { ... }
       #
       #   # Perform a delete request
-      #   client.delete '/services/data/v24.0/sobjects/Account/001D000000INjVe'
-      #   client.api_delete 'sobjects/Account/001D000000INjVe'
+      #   client.delete '/api/data/v9.1/leads(073ca9c8-2a41-e911-a81d-000d3a1d5a0b)'
+      #   client.api_delete 'leads(073ca9c8-2a41-e911-a81d-000d3a1d5a0b)'
       #
       # Returns the Faraday::Response.
       define_verbs :get, :post, :put, :delete, :patch, :head
@@ -53,28 +53,6 @@ module FrOData
       def query(soql)
         response = api_get 'query', q: soql
         mashify? ? response.body : response.body['records']
-      end
-
-
-      # Public: Perform a SOSL search
-      #
-      # sosl - A SOSL expression.
-      #
-      # Examples
-      #
-      #   # Find all occurrences of 'bar'
-      #   client.search('FIND {bar}')
-      #   # => #<Restforce::Collection >
-      #
-      #   # Find accounts match the term 'genepoint' and return the Name field
-      #   client.search('FIND {genepoint} RETURNING Account (Name)').map(&:Name)
-      #   # => ['GenePoint']
-      #
-      # Returns a Restforce::Collection if Restforce.configuration.mashify is true.
-      # Returns an Array of Hash for each record in the result if
-      # Restforce.configuration.mashify is false.
-      def search(sosl)
-        api_get('search', q: sosl).body
       end
 
       # Public: Insert a new record.
@@ -160,15 +138,15 @@ module FrOData
 
       # Public: Delete a record.
       #
-      # sobject - String name of the sobject.
+      # entity_set - The set the entity belongs to
       # id      - The Dynamics primary key ID of the record.
       #
       # Examples
       #
-      #   # Delete the Account with Id  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b"
+      #   # Delete the lead with id  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b"
       #   client.destroy('leads',  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b")
       #
-      # Returns true if the sobject was successfully deleted.
+      # Returns true if the entity was successfully deleted.
       # Returns false if an error is returned from Dynamics.
       def destroy(*args)
         destroy!(*args)
@@ -183,10 +161,10 @@ module FrOData
       #
       # Examples
       #
-      #   # Delete the Account with Id  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b"
-      #   client.destroy('leads',  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b")
+      #   # Delete the lead with id  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b"
+      #   client.destroy!('leads',  "073ca9c8-2a41-e911-a81d-000d3a1d5a0b")
       #
-      # Returns true of the sobject was successfully deleted.
+      # Returns true of the entity was successfully deleted.
       # Raises an exception if an error is returned from Dynamics.
       def destroy!(entity_set, id)
         query = service[entity_set].query
@@ -211,8 +189,7 @@ module FrOData
                       query.find(id).to_s
                     end
         body = api_get(url_chunk).body
-
-        FrOData::Entity.from_json( e['value'].first, c.service['leads'].entity_options)
+        build_entity(entity_set, body)
       end
 
       # Public: Finds a single record and returns select fields.
@@ -226,27 +203,17 @@ module FrOData
       #
       def select(entity_set, id, select, field = nil)
         query = service[entity_set].query
-        p query.to_s
 
         select.each{|field| query.select(field)}
 
-        p query.to_s
         url_chunk = if field
                       query.where("#{field} eq #{id}")
                     else
                       query.find(id).to_s
                     end
 
-
-        path = if field
-               "sobjects/#{sobject}/#{field}/#{ERB::Util.url_encode(id)}"
-               else
-                 "sobjects/#{sobject}/#{ERB::Util.url_encode(id)}"
-               end
-
-        path = "#{path}?fields=#{select.join(',')}" if select&.any?
-
-        api_get(path).body
+        body = api_get(url_chunk).body
+        build_entity(entity_set, body)
       end
 
       private
@@ -255,22 +222,22 @@ module FrOData
       #
       # Examples
       #
-      #   api_path('sobjects')
-      #   # => '/services/data/v24.0/sobjects'
+      #   api_path('leads')
+      #   # => '/api/data/v9.1/leads'
       def api_path(path)
         "/api/data/v#{options[:api_version]}/#{path}"
       end
 
       def build_entity(entity_set, data)
-        entity_options = client.service[set].entity_options
-        single_entity?(body) ? parse_entity(data, entity_options) : parse_entities(data, entity_options)
+        entity_options = service[entity_set].entity_options
+        single_entity?(data) ? parse_entity(data, entity_options) : parse_entities(data, entity_options)
       end
 
       def single_entity?(body)
         body['@odata.context'] =~ /\$entity$/
       end
 
-      def parse_entity(body, entity_options)
+      def parse_entity(entity_json, entity_options)
         FrOData::Entity.from_json(entity_json, entity_options)
       end
 
