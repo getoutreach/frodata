@@ -119,7 +119,7 @@ module FrOData
     # Faraday adapter to use. Defaults to Faraday.default_adapter.
     option :adapter, default: lambda { Faraday.default_adapter }
 
-    option :proxy_uri, default: lambda { ENV['DYNAMICS_PROXY_URI'] }
+    option :proxy_uri, default: lambda { ENV['FRODATA_PROXY_URI'] }
 
     # A Proc that is called with the response body after a successful authentication.
     option :authentication_callback
