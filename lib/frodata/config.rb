@@ -90,21 +90,18 @@ module FrOData
       end
     end
 
-    option :api_version, default: lambda { ENV['DYNAMICS_API_VERSION'] || '9.1' }
-
     # The OAuth client id
-    option :client_id, default: lambda { ENV['DYNAMICS_V1_CLIENT_ID'] }
+    option :client_id
 
     # The OAuth client secret
-    option :client_secret, default: lambda { ENV['DYNAMICS_V1_CLIENT_SECRET'] }
+    option :client_secret
 
-    # Set this to true if you're authenticating with a Sandbox instance.
-    # Defaults to false.
-    option :host, default: lambda { ENV['DYNAMICS_HOST'] || 'login.microsoftonline.com' }
+    option :host, default: 'login.microsoftonline.com'
 
     option :oauth_token
     option :refresh_token
     option :instance_url
+    option :base_path
 
     # Set this to an object that responds to read, write and fetch and all GET
     # requests will be cached.

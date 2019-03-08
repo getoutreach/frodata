@@ -30,8 +30,7 @@ module FrOData
       #                                   authentication requests
       #                                   (default: 'login.microsoftonline.com').
       #
-      #        :api_version             - The String REST api version to use
-      #                                   (default: '9.1')
+      #        :base_path              - The base path for the REST api. (default: '/')
       #
       #        :authentication_retries  - The number of times that client
       #                                   should attempt to reauthenticate

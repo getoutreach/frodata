@@ -230,7 +230,7 @@ module FrOData
                       query.include_count
                       query.to_s
                     else
-                      service[queryq].query.count
+                      service[query].query.count
                     end
 
         body = api_get(url_chunk).body
@@ -248,14 +248,14 @@ module FrOData
 
       private
 
-      # Internal: Returns a path to an api endpoint
+      # Internal: Returns a path to an api endpoint based on configured client
       #
       # Examples
       #
       #   api_path('leads')
-      #   # => '/api/data/v9.1/leads'
+      #   # => '/leads'
       def api_path(path)
-        "/api/data/v#{options[:api_version]}/#{path}"
+        "#{options[:base_path]}/#{path}" || "/#{path}"
       end
 
       def build_entity(entity_set, data)
