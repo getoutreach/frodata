@@ -27,7 +27,7 @@ module FrOData
       # Examples
       #
       #   define_verb :get
-      #   # => get '/services/data/v24.0/sobjects'
+      #   # => get '/path/to/entity'
       #
       # Returns nil.
       def define_verb(verb)
@@ -35,7 +35,7 @@ module FrOData
           retries = options[:authentication_retries]
           begin
             connection.send(verb, *args, &block)
-          rescue Restforce::UnauthorizedError
+          rescue FrOData::UnauthorizedError
             if retries.positive?
               retries -= 1
               connection.url_prefix = options[:instance_url]
@@ -54,7 +54,7 @@ module FrOData
       # Examples
       #
       #   define_api_verb :get
-      #   # => api_get 'sobjects'
+      #   # => api_get 'entity_set'
       #
       # Returns nil.
       def define_api_verb(verb)

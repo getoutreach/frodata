@@ -47,7 +47,6 @@ module FrOData
     def connection
       @connection ||= Faraday.new(faraday_options) do |builder|
         builder.use Faraday::Request::UrlEncoded
-        builder.use FrOData::Middleware::Mashify, nil, @options
         builder.response :json
 
         if FrOData.log?

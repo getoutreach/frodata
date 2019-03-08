@@ -33,26 +33,42 @@ module FrOData
       # Returns the Faraday::Response.
       define_verbs :get, :post, :put, :delete, :patch, :head
 
+      # Public: Return the metadata XML schema for the service
+      #
+      # Returns [String]
       def metadata
         api_get("$metadata").body
       end
 
-      # Public: Executs a SOQL query and returns the result.
+      # Public: Execute a query and returns the result.
       #
-      # soql - A SOQL expression.
+      # Query can be the url_chunk per the OData V4 spec or
+      # a FrOData::Query. The latter being preferred
       #
       # Examples
       #
       #   # Find the names of all Accounts
-      #   client.query('select Name from Account').map(&:Name)
-      #   # => ['Foo Bar Inc.', 'Whizbang Corp']
+      #   client.query("leads?$filter=firstname eq 'yo'")
       #
-      # Returns a Restforce::Collection if Restforce.configuration.mashify is true.
-      # Returns an Array of Hash for each record in the result if
-      # Restforce.configuration.mashify is false.
-      def query(soql)
-        response = api_get 'query', q: soql
-        mashify? ? response.body : response.body['records']
+      # or
+      #
+      #   query = client.service['leads'].query
+      #   query.where("firstname eq 'yo'")
+      #   client.query(query)
+      #
+      # Returns a list of FrOData::Entity
+      def query(query)
+        url_chunk, entity_set = if query.is_a?(FrOData::Query)
+                      [query.to_s, query.entity_set.name]
+                    else
+                      [query]
+                    end
+
+        body = api_get(url_chunk).body
+
+        # if manual query as a string we detect the set on the response
+        entity_set = body['@odata.context'].split('#')[-1] if entity_set.nil?
+        build_entity(entity_set, body)
       end
 
       # Public: Insert a new record.
@@ -66,7 +82,7 @@ module FrOData
       #   client.create('leads', {"firstname" =>'Bob'})
       #   # => '073ca9c8-2a41-e911-a81d-000d3a1d5a0b'
       #
-      # Returns the String Guid of the newly created entity.
+      # Returns the primary key value of the newly created entity.
       # Returns false if something bad happens.
       def create(*args)
         create!(*args)
@@ -86,7 +102,7 @@ module FrOData
       #   client.create!('leads', {"firstname" =>'Bob'})
       #   # => '073ca9c8-2a41-e911-a81d-000d3a1d5a0b'
       #
-      # Returns the String Guid of the newly created entity.
+      # Returns the primary key value of the newly created entity.
       # Raises exceptions if an error is returned from Dynamics.
       def create!(entity_set, attrs)
         entity = service[entity_set].new_entity(attrs)
@@ -106,7 +122,7 @@ module FrOData
       #   # Update the lead with id '073ca9c8-2a41-e911-a81d-000d3a1d5a0b'
       #   client.update('leads', "leadid": '073ca9c8-2a41-e911-a81d-000d3a1d5a0b', Name: 'Whizbang Corp')
       #
-      # Returns true if the sobject was successfully updated.
+      # Returns true if the entity was successfully updated.
       # Returns false if there was an error.
       def update(*args)
         update!(*args)
@@ -124,7 +140,7 @@ module FrOData
       #   # Update the leads with id '073ca9c8-2a41-e911-a81d-000d3a1d5a0b'
       #   client.update!('leads', 'leadid' => '073ca9c8-2a41-e911-a81d-000d3a1d5a0b', "firstname" => 'Whizbang Corp')
       #
-      # Returns true if the sobject was successfully updated.
+      # Returns true if the entity was successfully updated.
       # Raises an exception if an error is returned from Dynamics.
       def update!(entity_set, attrs)
         entity = service[entity_set].new_entity(attrs)
@@ -178,16 +194,12 @@ module FrOData
       # entity_set - The set the entity belongs to
       # id      - The id of the record. If field is specified, id should be the id
       #           of the external field.
-      # field   - External ID field to use (default: nil).
       #
-      # Returns the Enitity record.
-      def find(entity_set, id, field = nil)
+      # Returns the Entity record.
+      def find(entity_set, id)
         query = service[entity_set].query
-        url_chunk = if field
-                      query.where("#{field} eq #{id}")
-                    else
-                      query.find(id).to_s
-                    end
+        url_chunk = query.find(id)
+
         body = api_get(url_chunk).body
         build_entity(entity_set, body)
       end
@@ -197,23 +209,41 @@ module FrOData
       # entity_set - The set the entity belongs to
       # id      - The id of the record. If field is specified, id should be the id
       #           of the external field.
-      # select  - A String array denoting the fields to select.  If nil or empty array
+      # fields  - A String array denoting the fields to select.  If nil or empty array
       #           is passed, all fields are selected.
-      # field   - External ID field to use (default: nil).
-      #
-      def select(entity_set, id, select, field = nil)
+      def select(entity_set, id, fields)
         query = service[entity_set].query
 
-        select.each{|field| query.select(field)}
-
-        url_chunk = if field
-                      query.where("#{field} eq #{id}")
-                    else
-                      query.find(id).to_s
-                    end
+        fields.each{|field| query.select(field)}
+        url_chunk = query.find(id)
 
         body = api_get(url_chunk).body
         build_entity(entity_set, body)
+      end
+
+      # Public: Count the entity set or for the query passed
+      #
+      # entity_set or query  - A  String or a FrOData::Query. If String is passed,
+      #                         all entities for the set are counted.
+      def count(query)
+        url_chunk = if query.is_a?(FrOData::Query)
+                      query.include_count
+                      query.to_s
+                    else
+                      service[queryq].query.count
+                    end
+
+        body = api_get(url_chunk).body
+
+        if query.is_a?(FrOData::Query)
+          body['@odata.count']
+        else
+          # Some servers (*cough* Microsoft *cough*) seem to return
+          # extraneous characters in the response.
+          # I found out that the _\xef\xbb\xbf  contains probably invisible junk characters
+          # called the Unicode BOM (short name for: byte order mark).
+          body.scan(/\d+/).first.to_i
+        end
       end
 
       private

@@ -1,5 +1,3 @@
-require 'frodata/service/request'
-require 'frodata/service/response'
 
 module FrOData
   # Encapsulates the basic details and functionality needed to interact with an
