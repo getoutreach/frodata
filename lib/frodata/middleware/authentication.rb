@@ -6,7 +6,6 @@ module FrOData
   # will attempt to either reauthenticate (username and password) or refresh
   # the oauth access token (if a refresh token is present).
   class Middleware::Authentication < FrOData::Middleware
-    autoload :Password, 'frodata/middleware/authentication/password'
     autoload :Token,    'frodata/middleware/authentication/token'
 
     # Rescue from 401's, authenticate then raise the error again so the client
@@ -20,7 +19,7 @@ module FrOData
 
     # Internal: Performs the authentication and returns the response body.
     def authenticate!
-      response = connection.post '/services/oauth2/token' do |req|
+      response = connection.post '/common/oauth2/token' do |req|
         req.body = encode_www_form(params)
       end
 
