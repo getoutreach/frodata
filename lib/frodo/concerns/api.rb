@@ -64,7 +64,7 @@ module Frodo
                       [query]
                     end
 
-        body = api_get(url_chunk).body
+        body = JSON.parse(api_get(url_chunk).body)
 
         # if manual query as a string we detect the set on the response
         entity_set = body['@odata.context'].split('#')[-1] if entity_set.nil?
@@ -84,8 +84,8 @@ module Frodo
       #
       # Returns the primary key value of the newly created entity.
       # Returns false if something bad happens.
-      def create(*args)
-        create!(*args)
+      def create(entity_set, attrs)
+        create!(entity_set, attrs)
       rescue *exceptions
         false
       end
@@ -124,8 +124,8 @@ module Frodo
       #
       # Returns true if the entity was successfully updated.
       # Returns false if there was an error.
-      def update(*args)
-        update!(*args)
+      def update(entity_set, attrs)
+        update!(entity_set, attrs)
       rescue *exceptions
         false
       end
@@ -164,8 +164,8 @@ module Frodo
       #
       # Returns true if the entity was successfully deleted.
       # Returns false if an error is returned from Dynamics.
-      def destroy(*args)
-        destroy!(*args)
+      def destroy(entity_set, id)
+        destroy!(entity_set, id)
       rescue *exceptions
         false
       end
@@ -236,13 +236,13 @@ module Frodo
         body = api_get(url_chunk).body
 
         if query.is_a?(Frodo::Query)
-          body['@odata.count']
+          JSON.parse(body)['@odata.count'].to_i
         else
           # Some servers (*cough* Microsoft *cough*) seem to return
           # extraneous characters in the response.
           # I found out that the _\xef\xbb\xbf  contains probably invisible junk characters
           # called the Unicode BOM (short name for: byte order mark).
-          body.scan(/\d+/).first.to_i
+          body.to_s.scan(/\d+/).first.to_i
         end
       end
 
