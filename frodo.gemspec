@@ -6,11 +6,11 @@ require 'frodo/version'
 Gem::Specification.new do |spec|
   spec.name          = 'frodo'
   spec.version       = Frodo::VERSION
-  spec.authors       = ['Christoph Wagner', 'James Thompson']
-  spec.email         = %w{christoph@wrstudios.com james@plainprograms.com}
+  spec.authors       = ['Emmanuel Pinault']
+  spec.email         = %w{emmanuel.pinault@outreach.io}
   spec.summary       = %q{Simple OData library}
   spec.description   = %q{Provides a simple interface for working with OData V4 APIs.}
-  spec.homepage      = 'https://github.com/wrstudios/frodo'
+  spec.homepage      = 'https://github.com/getoutreach/frodo'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0")
