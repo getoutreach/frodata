@@ -9,17 +9,24 @@ describe Frodo::Concerns::API do
     Class.new {
       include Frodo::Concerns::Base
       include Frodo::Concerns::Connection
+
       include context.described_class
     }
   end
 
   let(:client) { klass.new }
-  let(:connection) { Faraday.new }
+  let(:connection) {
+    Faraday.new('http://frodo.com', {}) do |conn|
+      conn.request :json
+      conn.response :json
+      conn.adapter Faraday.default_adapter
+    end
+  }
 
   subject { client }
 
   let(:id) { 'some-id' }
-  let(:body) { 'Body'.to_json }
+  let(:body) { 'Body' }
   let(:path) { 'something/foo' }
   # Leverage WebMock match URI by pattern, needs to escape string otherwise chars like '$' are misinterpretted
   let(:uri) { /#{Regexp.escape(path)}/ }
@@ -34,7 +41,7 @@ describe Frodo::Concerns::API do
   let(:client_error) { Faraday::Error::ClientError.new(StandardError.new) }
 
   before do
-    stub_request(verb, uri).to_return(body: body, headers: headers)
+    stub_request(verb, uri).to_return(body: body.to_json, headers: headers)
     allow(client).to receive(:options).and_return(options)
     allow(client).to receive(:connection).and_return(connection)
   end
@@ -52,13 +59,13 @@ describe Frodo::Concerns::API do
     let(:path) { url_chunk }
     let(:entity_name) { 'entity' }
     let(:context) { "serviceRoot/$metadata##{entity_name}"}
-    let(:body) { { '@odata.context' => context }.to_json }
+    let(:body) { { '@odata.context' => context } }
 
     context 'url_chunk provided' do
       let(:query) { url_chunk }
 
       it 'returns entity fetched from url_chunk' do
-        allow(client).to receive(:build_entity).with(entity_name, JSON.parse(body)).and_return(entity)
+        allow(client).to receive(:build_entity).with(entity_name, body).and_return(entity)
 
         expect(subject.query(query)).to eq(entity)
       end
@@ -71,7 +78,7 @@ describe Frodo::Concerns::API do
         allow(query).to receive(:to_s).and_return(path)
         allow(query).to receive(:entity_set).and_return(entity)
         allow(entity).to receive(:name).and_return(entity_name)
-        allow(client).to receive(:build_entity).with(entity_name, JSON.parse(body)).and_return(entity)
+        allow(client).to receive(:build_entity).with(entity_name, body).and_return(entity)
 
         expect(subject.query(query)).to eq(entity)
       end
@@ -285,7 +292,7 @@ describe Frodo::Concerns::API do
 
   describe '.count' do
     let(:count) { 99 }
-    let(:body) { { '@odata.count' => count.to_s }.to_json }
+    let(:body) { { '@odata.count' => count.to_s } }
 
     subject { client.count(query) }
 
@@ -309,7 +316,7 @@ describe Frodo::Concerns::API do
     context 'provided a string that is entity_type' do
       let(:query) { entity_type }
       let(:frodo_query) { double(Frodo::Query) }
-      let(:body) { count.to_s }
+      let(:body) { count }
 
       it 'makes count query and retuns count' do
         allow(client).to receive(:service).and_return(service)
@@ -376,16 +383,16 @@ describe Frodo::Concerns::API do
   end
 
   describe '.single_entity?' do
-    let(:body_val) { { '@odata.context' => '$entity' } }
+    let(:body) { { '@odata.context' => '$entity' } }
 
-    subject { client.send(:single_entity?, body_val) }
+    subject { client.send(:single_entity?, body) }
 
     it "returns true when context contains string '$entity'" do
       expect(subject).to be_truthy
     end
 
     context "body context does not contain '$entity'" do
-      let(:body_val) { { '@odata.context' => 'other' } }
+      let(:body) { { '@odata.context' => 'other' } }
 
       it { should be(nil) }
     end

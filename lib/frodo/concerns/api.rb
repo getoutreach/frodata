@@ -64,7 +64,7 @@ module Frodo
                       [query]
                     end
 
-        body = JSON.parse(api_get(url_chunk).body)
+        body = api_get(url_chunk).body
 
         # if manual query as a string we detect the set on the response
         entity_set = body['@odata.context'].split('#')[-1] if entity_set.nil?
@@ -236,7 +236,7 @@ module Frodo
         body = api_get(url_chunk).body
 
         if query.is_a?(Frodo::Query)
-          JSON.parse(body)['@odata.count'].to_i
+          body['@odata.count'].to_i
         else
           # Some servers (*cough* Microsoft *cough*) seem to return
           # extraneous characters in the response.
