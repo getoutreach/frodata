@@ -84,8 +84,8 @@ module Frodo
       #
       # Returns the primary key value of the newly created entity.
       # Returns false if something bad happens.
-      def create(entity_set, attrs)
-        create!(entity_set, attrs)
+      def create(*args)
+        create!(*args)
       rescue *exceptions
         false
       end
@@ -124,8 +124,8 @@ module Frodo
       #
       # Returns true if the entity was successfully updated.
       # Returns false if there was an error.
-      def update(entity_set, attrs)
-        update!(entity_set, attrs)
+      def update(*args)
+        update!(*args)
       rescue *exceptions
         false
       end
@@ -164,8 +164,8 @@ module Frodo
       #
       # Returns true if the entity was successfully deleted.
       # Returns false if an error is returned from Dynamics.
-      def destroy(entity_set, id)
-        destroy!(entity_set, id)
+      def destroy(*args)
+        destroy!(*args)
       rescue *exceptions
         false
       end
