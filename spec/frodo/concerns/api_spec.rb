@@ -292,7 +292,7 @@ describe Frodo::Concerns::API do
 
   describe '.count' do
     let(:count) { 99 }
-    let(:body) { { '@odata.count' => count.to_s } }
+    let(:body) { { '@odata.count' => count } }
 
     subject { client.count(query) }
 
@@ -316,7 +316,7 @@ describe Frodo::Concerns::API do
     context 'provided a string that is entity_type' do
       let(:query) { entity_type }
       let(:frodo_query) { double(Frodo::Query) }
-      let(:body) { count }
+      let(:body) { count.to_s }
 
       it 'makes count query and retuns count' do
         allow(client).to receive(:service).and_return(service)

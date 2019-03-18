@@ -236,13 +236,13 @@ module Frodo
         body = api_get(url_chunk).body
 
         if query.is_a?(Frodo::Query)
-          body['@odata.count'].to_i
+          body['@odata.count']
         else
           # Some servers (*cough* Microsoft *cough*) seem to return
           # extraneous characters in the response.
           # I found out that the _\xef\xbb\xbf  contains probably invisible junk characters
           # called the Unicode BOM (short name for: byte order mark).
-          body.to_s.scan(/\d+/).first.to_i
+          body.scan(/\d+/).first.to_i
         end
       end
 
