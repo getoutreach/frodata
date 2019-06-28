@@ -211,6 +211,20 @@ describe Frodo::Concerns::API do
         expect(subject).to be(true)
       end
     end
+
+    context 'with additional headers' do
+      let(:additional_header) { {"header" => '1' } }
+
+      before do
+        stub_request(verb, uri).to_return(body: body.to_json, headers: headers.merge!(additional_header))
+      end
+
+      subject { client.update!(entity_type, attributes, additional_header) }
+
+      it 'adds additional headers to request' do
+        subject
+      end
+    end
   end
 
   describe '.destroy' do
