@@ -221,7 +221,14 @@ describe Frodo::Concerns::API do
 
       subject { client.update!(entity_type, attributes, additional_header) }
 
-      it 'adds additional headers to request' do
+      it 'headers are included in the request' do
+        subject
+      end
+
+      it 'sets headers on the client request object' do
+        expect_any_instance_of(Faraday::Builder).to receive(:build_response)
+        .with(anything(), have_attributes(headers: hash_including(additional_header)))
+
         subject
       end
     end

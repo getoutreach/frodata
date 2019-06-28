@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-
 require 'erb'
 require 'uri'
 require 'frodo/concerns/verbs'
@@ -158,6 +157,7 @@ module Frodo
         raise ArgumentError, 'ID field missing from provided attributes' if entity.is_new?
 
         api_patch url_chunk, attrs do |req|
+          puts "#{req.class.name}"
           req.headers.merge!(additional_headers)
         end
         true
