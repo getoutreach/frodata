@@ -18,9 +18,21 @@ module Frodo
         if oauth_refresh?
           return Frodo::Middleware::Authentication::Token
         end
+        if password?
+          return Frodo::Middleware::Authentication::Password
+        end
         if client_credentials?
           return Frodo::Middleware::Authentication::ClientCredentials
         end
+      end
+
+      # Internal: Returns true if oauth password grant
+      # should be used for authentication.
+      def password?
+        options[:username] &&
+          options[:password] &&
+          options[:client_id] &&
+          options[:tenant_id]
       end
 
       # Internal: Returns true if oauth client_credentials flow should be used for

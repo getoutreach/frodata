@@ -8,6 +8,7 @@ module Frodo
   class Middleware::Authentication < Frodo::Middleware
     autoload :Token, 'frodo/middleware/authentication/token'
     autoload :ClientCredentials, 'frodo/middleware/authentication/client_credentials'
+    autoload :Password, 'frodo/middleware/authentication/password'
 
     # Rescue from 401's, authenticate then raise the error again so the client
     # can reissue the request.
