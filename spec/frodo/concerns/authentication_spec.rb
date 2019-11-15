@@ -50,7 +50,25 @@ describe Frodo::Concerns::Authentication do
         expect(client).to receive(:oauth_refresh?).and_return(true)
       end
 
-    it { should eq Frodo::Middleware::Authentication::Token }
+      it { should eq Frodo::Middleware::Authentication::Token }
+    end
+
+    context 'when client_credentials options are provided' do
+      before do
+        expect(client).to receive(:oauth_refresh?).and_return(false)
+        expect(client).to receive(:client_credentials?).and_return(true)
+      end
+
+      it { should eq Frodo::Middleware::Authentication::ClientCredentials }
+    end
+
+    context 'when no auth options are provided' do
+      before do
+        expect(client).to receive(:oauth_refresh?).and_return(false)
+        expect(client).to receive(:client_credentials?).and_return(false)
+      end
+
+      it { should be_falsy }
     end
   end
 
@@ -76,4 +94,28 @@ describe Frodo::Concerns::Authentication do
       it { should_not be_truthy }
     end
   end
+
+  describe '.client_credentials?' do
+    subject       { client.client_credentials? }
+    let(:options) { {} }
+
+    before do
+      expect(client).to receive(:options).and_return(options).at_least(1).times
+    end
+
+    context 'when oauth options are provided' do
+      let(:options) do
+        { tenant_id: 'tenant',
+          client_id: 'client',
+          client_secret: 'secret' }
+      end
+
+      it { should be_truthy}
+    end
+
+    context 'when oauth options are not provided' do
+      it { should_not be_truthy }
+    end
+  end
+
 end
