@@ -78,7 +78,7 @@ describe Frodo::Middleware::Authentication::ClientCredentials do
             expect(auth_callback).to_not receive(:call)
             expect do
               middleware.authenticate!
-            end.to raise_error
+            end.to raise_error(Frodo::AuthenticationError)
           end
         end
       end
